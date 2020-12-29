@@ -88,7 +88,6 @@ class Bot(Client):
                  nick: str, loop: asyncio.BaseEventLoop = None, initial_channels: Union[list, tuple] = None,
                  webhook_server: bool = False, local_host: str = None, external_host: str = None, callback: str = None,
                  port: int = None, **attrs):
-        print("HAHAHAHAHAHHAHAHA")
         self.loop = loop or asyncio.get_event_loop()
         super().__init__(loop=self.loop, client_id=client_id,
                          api_token=api_token, client_secret=client_secret, **attrs)
@@ -138,6 +137,7 @@ class Bot(Client):
                 continue
 
     def add_command(self, command):
+        raise Exception('STOP')
         if not isinstance(command, Command):
             raise TypeError('Commands passed my be a subclass of Command.')
         elif command.name in self.commands:
