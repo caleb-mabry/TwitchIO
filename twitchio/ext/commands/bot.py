@@ -84,13 +84,14 @@ class Bot(Client):
         A long random string, such as hex, is advised e.g `2t389hth892t3h898hweiogtieo`
     """
 
-    def __init__(self, irc_token: str, api_token: str=None, *, client_id: str=None, client_secret: str=None, prefix: Union[list, tuple, str],
-                 nick: str, loop: asyncio.BaseEventLoop=None, initial_channels: Union[list, tuple]=None,
-                 webhook_server: bool=False, local_host: str=None, external_host: str=None, callback: str=None,
-                 port: int=None, **attrs):
-
+    def __init__(self, irc_token: str, api_token: str = None, *, client_id: str = None, client_secret: str = None, prefix: Union[list, tuple, str],
+                 nick: str, loop: asyncio.BaseEventLoop = None, initial_channels: Union[list, tuple] = None,
+                 webhook_server: bool = False, local_host: str = None, external_host: str = None, callback: str = None,
+                 port: int = None, **attrs):
+        print("HAHAHAHAHAHHAHAHA")
         self.loop = loop or asyncio.get_event_loop()
-        super().__init__(loop=self.loop, client_id=client_id, api_token=api_token, client_secret=client_secret, **attrs)
+        super().__init__(loop=self.loop, client_id=client_id,
+                         api_token=api_token, client_secret=client_secret, **attrs)
         self.nick = nick
         self.initial_channels = initial_channels
 
@@ -105,7 +106,8 @@ class Bot(Client):
                                                        callback=callback,
                                                        port=port)
             loop = asyncio.new_event_loop()
-            thread = threading.Thread(target=self._webhook_server.run_server, args=(loop, ), daemon=True)
+            thread = threading.Thread(
+                target=self._webhook_server.run_server, args=(loop, ), daemon=True)
             thread.start()
 
         self.loop.create_task(self._prefix_setter(prefix))
@@ -139,9 +141,11 @@ class Bot(Client):
         if not isinstance(command, Command):
             raise TypeError('Commands passed my be a subclass of Command.')
         elif command.name in self.commands:
-            raise CommandError(f'Failed to load command <{command.name}>, a command with that name already exists')
+            raise CommandError(
+                f'Failed to load command <{command.name}>, a command with that name already exists')
         elif not inspect.iscoroutinefunction(command._callback):
-            raise CommandError(f'Failed to load command <{command.name}>. Commands must be coroutines.')
+            raise CommandError(
+                f'Failed to load command <{command.name}>. Commands must be coroutines.')
 
         self.commands[command.name] = command
 
@@ -340,7 +344,8 @@ class Bot(Client):
         elif isinstance(item, str):
             self.prefixes = [item]
         else:
-            raise ClientError('Invalid prefix provided. A list, tuple, str or callable returning either should be used.')
+            raise ClientError(
+                'Invalid prefix provided. A list, tuple, str or callable returning either should be used.')
 
     async def _get_prefixes(self, message):
         prefix = ret = self.prefixes
@@ -434,7 +439,8 @@ class Bot(Client):
         if not cls:
             cls = Context
 
-        ctx = cls(message=message, channel=message.channel, user=message.author, prefix=prefix)
+        ctx = cls(message=message, channel=message.channel,
+                  user=message.author, prefix=prefix)
         return ctx
 
     async def _dispatch(self, event: str, *args, **kwargs):
@@ -446,7 +452,8 @@ class Bot(Client):
         if no_global_checks:
             checks = [predicate for predicate in command._checks]
         else:
-            checks = [predicate for predicate in itertools.chain(self._checks, command._checks)]
+            checks = [predicate for predicate in itertools.chain(
+                self._checks, command._checks)]
 
         if not checks:
             return True
@@ -510,7 +517,8 @@ class Bot(Client):
                 return await self.event_command_error(ctx, CheckFailure(f'The command <{command.name}> failed to invoke'
                                                                         f' due to checks:: {result.__name__}'))
             elif not result:
-                raise CheckFailure(f'The command <{command.name}> failed to invoke due to checks.')
+                raise CheckFailure(
+                    f'The command <{command.name}> failed to invoke due to checks.')
 
         try:
             ctx.args, ctx.kwargs = await command.parse_args(instance, parsed)
@@ -669,8 +677,10 @@ class Bot(Client):
         error: :class:`.Exception`
             The exception raised while trying to invoke the command.
         """
-        print('Ignoring exception in command: {0}:'.format(error), file=sys.stderr)
-        traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
+        print('Ignoring exception in command: {0}:'.format(
+            error), file=sys.stderr)
+        traceback.print_exception(
+            type(error), error, error.__traceback__, file=sys.stderr)
 
     async def event_mode(self, channel, user, status):
         """|coro|
@@ -796,7 +806,8 @@ class Bot(Client):
             async def event_error(error, data):
                 traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
         """
-        traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
+        traceback.print_exception(
+            type(error), error, error.__traceback__, file=sys.stderr)
 
     async def event_ready(self):
         """|coro|
@@ -833,7 +844,7 @@ class Bot(Client):
         """
         pass
 
-    def command(self, *, name: str=None, aliases: Union[list, tuple]=None, cls=Command):
+    def command(self, *, name: str = None, aliases: Union[list, tuple] = None, cls=Command):
         """Decorator which registers a command on the bot.
 
         Commands must be a coroutine.
@@ -861,7 +872,8 @@ class Bot(Client):
         def decorator(func):
             cmd_name = name or func.__name__
 
-            command = cls(name=cmd_name, func=func, aliases=aliases, instance=None)
+            command = cls(name=cmd_name, func=func,
+                          aliases=aliases, instance=None)
             self.add_command(command)
 
             return command
@@ -913,7 +925,7 @@ class Bot(Client):
         self._checks.append(func)
         return func
 
-    def add_listener(self, func, name: str=None):
+    def add_listener(self, func, name: str = None):
         """Method which adds a coroutine as an extra listener.
 
         This can be used to add extra event listeners to the bot.
@@ -935,7 +947,7 @@ class Bot(Client):
         else:
             self.extra_listeners[name].append(func)
 
-    def listen(self, event: str=None):
+    def listen(self, event: str = None):
         """Decorator which adds a coroutine as a listener to an event.
 
         This can be used in place of :meth:`.event` or when more than one of the same event is required.
@@ -994,7 +1006,8 @@ class Bot(Client):
 
         if callback is None:
             if self._webhook_server is None:
-                raise Exception('No callback passed and no webhook server running to retrieve a callback url from.')
+                raise Exception(
+                    'No callback passed and no webhook server running to retrieve a callback url from.')
 
             callback = f'{self._webhook_server.external}:{self._webhook_server.port}/{self._webhook_server.callback}'
 
