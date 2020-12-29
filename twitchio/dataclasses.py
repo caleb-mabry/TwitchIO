@@ -30,64 +30,31 @@ __all__ = ('Message', 'Channel', 'User', 'Context', 'NoticeSubscription')
 import datetime
 import time
 from typing import *
+from dataclasses import dataclass
 
 from .abcs import Messageable
 from .errors import EchoMessageWarning, HTTPException, Unauthorized
 
-
+@dataclass
 class Message:
-
-    __slots__ = ('_author', '_channel', '_raw_data', 'content', 'clean_content', '_tags', '_timestamp', 'echo')
-
-    def __init__(self, **attrs):
-        self._author = attrs.pop('author', None)
-        self._channel = attrs.pop('channel', None)
-        self._raw_data = attrs.pop('raw_data', None)
-        self.content = attrs.pop('content', None)
-        self.clean_content = attrs.pop('clean_content', None)
-        self._tags = attrs.pop('tags', None)
-        self.echo = False
-
-        try:
-            self._timestamp = self._tags['tmi-sent-ts']
-        except (TypeError, KeyError):
-            self._timestamp = time.time()
-
-    @property
-    def author(self) -> 'User':  # stub
-        """The User object associated with the Message."""
-        return self._author
-
-    @property
-    def channel(self) -> 'Channel':  # stub
-        """The Channel object associated with the Message."""
-        return self._channel
-
-    @property
-    def raw_data(self) -> str:
-        """The raw data received from Twitch for this Message."""
-        return self._raw_data
-
-    @property
-    def tags(self) -> Optional[dict]:
-        """The tags associated with the Message.
-
-        Could be None.
-        """
-        return self._tags
+    author: str = None
+    content: str = None
+    channel: str = None
+    raw_data: str = None
+    tags: dict = None
+    clean_content: str = None
+    echo: bool = False
 
     @property
     def timestamp(self) -> datetime.datetime.timestamp:
-        """The Twitch timestamp for this Message.
-
-        Returns
-        ---------
-        timestamp:
-            UTC datetime object of the Twitch timestamp.
-        """
         timestamp = datetime.datetime.utcfromtimestamp(int(self._timestamp) / 1000)
         return timestamp
 
+    def __post_init__(self):
+        try:
+            self._timestamp = self.tags['tmi-sent-ts']
+        except (TypeError, KeyError):
+            self._timestamp = time.time()
 
 class Channel(Messageable):
 
