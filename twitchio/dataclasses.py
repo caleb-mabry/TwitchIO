@@ -29,64 +29,36 @@ __all__ = ('Message', 'Channel', 'User', 'Context', 'NoticeSubscription')
 
 import datetime
 import time
+from dataclasses import dataclass
 from typing import *
 
 from .abcs import Messageable
 from .errors import EchoMessageWarning, HTTPException, Unauthorized
 
 
+@dataclass
 class Message:
 
-    __slots__ = ('_author', '_channel', '_raw_data', 'content', 'clean_content', '_tags', '_timestamp', 'echo')
+    __slots__ = ('_author', '_channel', '_raw_data', 'content',
+                 'clean_content', '_tags', '_timestamp', 'echo')
+    print('Creating message')
+    _author: str = None
+    _channel: str = None
+    _raw_data: str = None
+    content: str = None
+    clean_content: str = None
+    _tags: str = None
+    _timestamp: datetime.datetime.timestamp
+    echo: bool = False
 
-    def __init__(self, **attrs):
-        self._author = attrs.pop('author', None)
-        self._channel = attrs.pop('channel', None)
-        self._raw_data = attrs.pop('raw_data', None)
-        self.content = attrs.pop('content', None)
-        self.clean_content = attrs.pop('clean_content', None)
-        self._tags = attrs.pop('tags', None)
-        self.echo = False
+    def __post_init__(self):
+        self.init_timestamp()
 
+    def init_timestamp(self):
         try:
             self._timestamp = self._tags['tmi-sent-ts']
         except (TypeError, KeyError):
             self._timestamp = time.time()
-
-    @property
-    def author(self) -> 'User':  # stub
-        """The User object associated with the Message."""
-        return self._author
-
-    @property
-    def channel(self) -> 'Channel':  # stub
-        """The Channel object associated with the Message."""
-        return self._channel
-
-    @property
-    def raw_data(self) -> str:
-        """The raw data received from Twitch for this Message."""
-        return self._raw_data
-
-    @property
-    def tags(self) -> Optional[dict]:
-        """The tags associated with the Message.
-
-        Could be None.
-        """
-        return self._tags
-
-    @property
-    def timestamp(self) -> datetime.datetime.timestamp:
-        """The Twitch timestamp for this Message.
-
-        Returns
-        ---------
-        timestamp:
-            UTC datetime object of the Twitch timestamp.
-        """
-        timestamp = datetime.datetime.utcfromtimestamp(int(self._timestamp) / 1000)
-        return timestamp
 
 
 class Channel(Messageable):
@@ -149,7 +121,7 @@ class Channel(Messageable):
         except IndexError:
             pass
 
-    async def get_custom_rewards(self, token: str, broadcaster_id: int, *, only_manageable=False, ids: List[int]=None) -> List["CustomReward"]:
+    async def get_custom_rewards(self, token: str, broadcaster_id: int, *, only_manageable=False, ids: List[int] = None) -> List["CustomReward"]:
         """
         Fetches the channels custom rewards (aka channel points) from the api.
         Parameters
@@ -170,7 +142,8 @@ class Channel(Messageable):
         try:
             data = await self._http.get_rewards(token, broadcaster_id, only_manageable, ids)
         except Unauthorized as error:
-            raise Unauthorized("The given token is invalid", "", 401) from error
+            raise Unauthorized("The given token is invalid",
+                               "", 401) from error
         except HTTPException as error:
             status = error.args[2]
             if status == 403:
@@ -209,7 +182,8 @@ class User:
                 k, _, v = chunk.partition('/')
                 self._badges[k] = v
 
-        self._mod = int(self._tags.get('mod', 0)) if self._tags else attrs.get('mod', 0)
+        self._mod = int(self._tags.get('mod', 0)
+                        ) if self._tags else attrs.get('mod', 0)
 
     def __repr__(self):
         return '<User name={0.name} channel={0._channel}>'.format(self)
@@ -431,6 +405,7 @@ class NoticeSubscription:
         self.sub_plan = tags['msg-param-sub-plan']
         self.sub_plan_name = tags['msg-param-sub-plan-name']
 
+
 class CustomReward:
     """
     Represents a Custom Reward object, as given by the api. Use :ref:`User.get_custom_rewards` to fetch these
@@ -443,7 +418,7 @@ class CustomReward:
         self._http = http
         self._channel = channel
         self._broadcaster_id = obj['broadcaster_id']
-        
+
         self.id = obj['id']
         self.image = obj['image']['url_1x'] if obj['image'] else obj['default_image']['url_1x']
         self.background_color = obj['background_color']
@@ -454,14 +429,13 @@ class CustomReward:
         self.input_required = obj['is_user_input_required']
         self.max_per_stream = obj['max_per_stream_setting']['is_enabled'], obj['max_per_stream_setting']['max_per_stream']
         self.max_per_user_stream = obj['max_per_user_per_stream_setting']['is_enabled'], \
-                                    obj['max_per_user_per_stream_setting']['max_per_user_per_stream']
+            obj['max_per_user_per_stream_setting']['max_per_user_per_stream']
         self.cooldown = obj['global_cooldown_setting']['is_enabled'], obj['global_cooldown_setting']['global_cooldown_seconds']
         self.paused = obj['paused']
         self.in_stock = obj['is_in_stock']
         self.redemptions_skip_queue = obj['should_redemptions_skip_request_queue']
         self.redemptions_current_stream = obj['redemptions_redeemed_current_stream']
         self.cooldown_until = obj['cooldown_expires_at']
-
 
     async def edit(
             self,
@@ -483,7 +457,7 @@ class CustomReward:
     ):
         """
         Edits the reward. Note that apps can only modify rewards they have made.
-        
+
         Parameters
         -----------
         token: the bearer token for the channel of the reward
@@ -528,7 +502,8 @@ class CustomReward:
                 redemptions_skip_queue
             )
         except Unauthorized as error:
-            raise Unauthorized("The given token is invalid", "", 401) from error
+            raise Unauthorized("The given token is invalid",
+                               "", 401) from error
         except HTTPException as error:
             status = error.args[2]
             if status == 403:
@@ -558,7 +533,8 @@ class CustomReward:
         try:
             await self._http.delete_reward(token, self._broadcaster_id, self._id)
         except Unauthorized as error:
-            raise Unauthorized("The given token is invalid", "", 401) from error
+            raise Unauthorized("The given token is invalid",
+                               "", 401) from error
         except HTTPException as error:
             status = error.args[2]
             if status == 403:
@@ -579,7 +555,8 @@ class CustomReward:
         try:
             data = await self._http.get_reward_redemptions(token, self._broadcaster_id, self._id, status=status, sort=sort)
         except Unauthorized as error:
-            raise Unauthorized("The given token is invalid", "", 401) from error
+            raise Unauthorized("The given token is invalid",
+                               "", 401) from error
         except HTTPException as error:
             status = error.args[2]
             if status == 403:
@@ -592,6 +569,7 @@ class CustomReward:
 
 class CustomRewardRedemption:
     __slots__ = "_http", "_broadcaster_id", "id", "user_id", "user_name", "input", "status", "redeemed_at", "reward"
+
     def __init__(self, obj, http, parent):
         self._http = http
         self._broadcaster_id = obj['broadcaster_id']
@@ -615,11 +593,13 @@ class CustomRewardRedemption:
         --------
         itself.
         """
-        reward_id = self.reward.id if isinstance(self.reward, CustomReward) else self.reward['id']
+        reward_id = self.reward.id if isinstance(
+            self.reward, CustomReward) else self.reward['id']
         try:
             data = await self._http.update_reward_redemption_status(token, self._broadcaster_id, self.id, reward_id, "FULFILLED")
         except Unauthorized as error:
-            raise Unauthorized("The given token is invalid", "", 401) from error
+            raise Unauthorized("The given token is invalid",
+                               "", 401) from error
         except HTTPException as error:
             status = error.args[2]
             if status == 403:
@@ -627,7 +607,8 @@ class CustomRewardRedemption:
                                     "not available for the broadcaster (403)", error.args[1], 403) from error
             raise
         else:
-            self.__init__(data['data'], self._http, self.reward if isinstance(self.reward, CustomReward) else None)
+            self.__init__(data['data'], self._http, self.reward if isinstance(
+                self.reward, CustomReward) else None)
             return self
 
     async def refund(self, token: str):
@@ -642,12 +623,14 @@ class CustomRewardRedemption:
         --------
         itself.
         """
-        reward_id = self.reward.id if isinstance(self.reward, CustomReward) else self.reward['id']
+        reward_id = self.reward.id if isinstance(
+            self.reward, CustomReward) else self.reward['id']
         try:
             data = await self._http.update_reward_redemption_status(token, self._broadcaster_id, self.id, reward_id,
                                                                     "CANCELLED")
         except Unauthorized as error:
-            raise Unauthorized("The given token is invalid", "", 401) from error
+            raise Unauthorized("The given token is invalid",
+                               "", 401) from error
         except HTTPException as error:
             status = error.args[2]
             if status == 403:
@@ -655,5 +638,6 @@ class CustomRewardRedemption:
                                     "not available for the broadcaster (403)", error.args[1], 403) from error
             raise
         else:
-            self.__init__(data['data'], self._http, self.reward if isinstance(self.reward, CustomReward) else None)
+            self.__init__(data['data'], self._http, self.reward if isinstance(
+                self.reward, CustomReward) else None)
             return self
