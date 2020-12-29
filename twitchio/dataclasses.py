@@ -39,8 +39,6 @@ from .errors import EchoMessageWarning, HTTPException, Unauthorized
 @dataclass
 class Message:
 
-    __slots__ = ('_author', '_channel', '_raw_data', 'content',
-                 'clean_content', '_tags', '_timestamp', 'echo')
     print('Creating message')
     _author: str = None
     _channel: str = None
