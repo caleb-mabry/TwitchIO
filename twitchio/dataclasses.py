@@ -38,15 +38,13 @@ from .errors import EchoMessageWarning, HTTPException, Unauthorized
 
 @dataclass
 class Message:
-
-    print('Creating message')
     _author: str = None
     _channel: str = None
     _raw_data: str = None
     content: str = None
     clean_content: str = None
     _tags: str = None
-    _timestamp: datetime.datetime.timestamp
+    _timestamp: datetime.datetime.timestamp = time.time()
     echo: bool = False
 
     def __post_init__(self):
